@@ -1,4 +1,4 @@
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   LessonProgressStatus,
   lessonProgress,
@@ -37,7 +37,12 @@ export function getLessonProgressForCourse(
   const courseLessons = db
     .select({ id: lessons.id })
     .from(lessons)
-    .where(or(...courseModules.map((m) => eq(lessons.moduleId, m.id))))
+    .where(
+      inArray(
+        lessons.moduleId,
+        courseModules.map((m) => m.id)
+      )
+    )
     .all();
 
   if (courseLessons.length === 0) return [];
@@ -48,7 +53,10 @@ export function getLessonProgressForCourse(
     .where(
       and(
         eq(lessonProgress.userId, userId),
-        or(...courseLessons.map((l) => eq(lessonProgress.lessonId, l.id)))
+        inArray(
+          lessonProgress.lessonId,
+          courseLessons.map((l) => l.id)
+        )
       )
     )
     .all();

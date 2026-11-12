@@ -1,5 +1,4 @@
-import type { lessons } from "~/db/schema";
-import type { Db } from "./db";
+import type { Db, Lesson } from "./db";
 import {
   calculateWatchProgress,
   getLastWatchPosition,
@@ -7,8 +6,6 @@ import {
   getLessonProgressForCourse,
   markLessonInProgress,
 } from "./progress.server";
-
-type Lesson = typeof lessons.$inferSelect;
 
 function videoProgress(db: Db, userId: number, lesson: Lesson) {
   if (!lesson.videoUrl) return { lastWatchPosition: 0, watchProgress: 0 };

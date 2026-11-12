@@ -8,10 +8,7 @@ import {
   getModuleById,
   getUserById,
 } from "./course.server";
-import type { lessons } from "~/db/schema";
-import type { Db } from "./db";
-
-type Lesson = typeof lessons.$inferSelect;
+import type { Db, Lesson } from "./db";
 import { neighbouringLessons, toCurriculum } from "./navigation";
 import { loadLessonProgress } from "./load-progress.server";
 import { getLessonQuiz } from "./quiz.server";
@@ -66,7 +63,6 @@ async function loadConfidential(
       ? isBookmarked(db, currentUserId, lessonId)
       : false,
     note: note ? { body: note.body, updatedAt: note.updatedAt } : null,
-    // Render lesson content from Markdown to HTML server-side
     contentHtml: content ? await renderMarkdown(content) : null,
   };
 }

@@ -67,7 +67,6 @@ function useMarkComplete(
   const isCompleted =
     lesson.status === LessonProgressStatus.Completed || justCompleted;
 
-  // Navigate to next lesson after marking complete
   useEffect(() => {
     if (justCompleted && nextLesson) {
       navigate(`/courses/${courseSlug}/lessons/${nextLesson.id}`);
