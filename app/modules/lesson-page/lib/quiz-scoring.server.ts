@@ -21,19 +21,14 @@ type Question = typeof quizQuestions.$inferSelect;
 /** Each question's first correct option, read in one query. */
 function correctOptionIds(db: Db, questions: Question[]) {
   const ids = questions.map((q) => q.id);
-  const correct = ids.length
-    ? db
-        .select({ id: quizOptions.id, questionId: quizOptions.questionId })
-        .from(quizOptions)
-        .where(
-          and(
-            inArray(quizOptions.questionId, ids),
-            eq(quizOptions.isCorrect, true)
-          )
-        )
-        .orderBy(quizOptions.id)
-        .all()
-    : [];
+  const correct = db
+    .select({ id: quizOptions.id, questionId: quizOptions.questionId })
+    .from(quizOptions)
+    .where(
+      and(inArray(quizOptions.questionId, ids), eq(quizOptions.isCorrect, true))
+    )
+    .orderBy(quizOptions.id)
+    .all();
   const byQuestion = new Map<number, number>();
   for (const option of correct) {
     if (!byQuestion.has(option.questionId)) {
@@ -41,12 +36,6 @@ function correctOptionIds(db: Db, questions: Question[]) {
     }
   }
   return byQuestion;
-}
-
-function hasCorrectOption(q: Question) {
-  return (
-    q.questionType === "multiple_choice" || q.questionType === "true_false"
-  );
 }
 
 function scoreQuestion(
@@ -62,9 +51,7 @@ function scoreQuestion(
       correctOptionId: null,
     };
   }
-  const correctOptionId = hasCorrectOption(q)
-    ? (correctOptions.get(q.id) ?? null)
-    : null;
+  const correctOptionId = correctOptions.get(q.id) ?? null;
   return {
     questionId: q.id,
     correct: selected === correctOptionId,

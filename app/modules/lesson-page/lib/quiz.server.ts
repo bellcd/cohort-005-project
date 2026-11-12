@@ -21,19 +21,17 @@ function getQuizWithQuestions(db: Db, quizId: number) {
     .orderBy(quizQuestions.position)
     .all();
 
-  const options = questions.length
-    ? db
-        .select()
-        .from(quizOptions)
-        .where(
-          inArray(
-            quizOptions.questionId,
-            questions.map((q) => q.id)
-          )
-        )
-        .orderBy(quizOptions.id)
-        .all()
-    : [];
+  const options = db
+    .select()
+    .from(quizOptions)
+    .where(
+      inArray(
+        quizOptions.questionId,
+        questions.map((q) => q.id)
+      )
+    )
+    .orderBy(quizOptions.id)
+    .all();
   const questionsWithOptions = questions.map((question) => ({
     ...question,
     options: options.filter((o) => o.questionId === question.id),
