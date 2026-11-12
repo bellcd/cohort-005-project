@@ -6,6 +6,7 @@ import { getQuizById } from "./lib/quiz.server";
 import { parseQuizAnswers } from "./lib/quiz-grading";
 import { scoreQuizAttempt } from "./lib/quiz-scoring.server";
 import { getCommentById } from "./lib/thread.server";
+import { createLessonWrites } from "./lib/writes.server";
 
 export type { LessonPageData, LessonPageRequest } from "./lib/load.server";
 export type QuizResult = NonNullable<ReturnType<typeof scoreQuizAttempt>>;
@@ -18,6 +19,8 @@ export type QuizResult = NonNullable<ReturnType<typeof scoreQuizAttempt>>;
  */
 export function createLessonPage(database: Db) {
   return {
+    ...createLessonWrites(database),
+
     /** Everything the page shows, locked or full; null if the lesson is gone. */
     load(request: LessonPageRequest) {
       return loadLessonPage(database, request);
