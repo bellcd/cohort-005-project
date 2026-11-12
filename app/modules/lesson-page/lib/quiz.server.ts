@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { quizAttempts, quizOptions, quizQuestions, quizzes } from "~/db/schema";
 import type { Db } from "./db";
 
@@ -21,14 +21,23 @@ function getQuizWithQuestions(db: Db, quizId: number) {
     .orderBy(quizQuestions.position)
     .all();
 
-  const questionsWithOptions = questions.map((question) => {
-    const options = db
-      .select()
-      .from(quizOptions)
-      .where(eq(quizOptions.questionId, question.id))
-      .all();
-    return { ...question, options };
-  });
+  const options = questions.length
+    ? db
+        .select()
+        .from(quizOptions)
+        .where(
+          inArray(
+            quizOptions.questionId,
+            questions.map((q) => q.id)
+          )
+        )
+        .orderBy(quizOptions.id)
+        .all()
+    : [];
+  const questionsWithOptions = questions.map((question) => ({
+    ...question,
+    options: options.filter((o) => o.questionId === question.id),
+  }));
 
   return { ...quiz, questions: questionsWithOptions };
 }
