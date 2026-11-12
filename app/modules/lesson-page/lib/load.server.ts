@@ -56,7 +56,10 @@ async function loadConfidential(
   const { lessonId, currentUserId } = request;
   const note = currentUserId ? getNote(db, currentUserId, lessonId) : undefined;
   return {
-    comments: await getRenderedLessonThread(db, lessonId),
+    comments: await getRenderedLessonThread(db, {
+      lessonId,
+      instructorId: request.instructorId,
+    }),
     instructorName:
       getUserById(db, request.instructorId)?.name ?? "your instructor",
     bookmarked: currentUserId

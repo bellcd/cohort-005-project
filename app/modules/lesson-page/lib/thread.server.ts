@@ -1,5 +1,5 @@
 import { asc, eq } from "drizzle-orm";
-import { comments, courses, lessons, modules, users } from "~/db/schema";
+import { comments, users } from "~/db/schema";
 import { UserRole } from "~/db/schema";
 import { renderComment } from "~/lib/comment-markdown.server";
 import { markdown, type Markdown } from "~/lib/text";
@@ -23,21 +23,6 @@ type ThreadComment = {
   author: CommentAuthor;
   replies: ThreadComment[];
 };
-
-function getCourseForLesson(db: Db, lessonId: number) {
-  return db
-    .select({
-      courseId: courses.id,
-      courseTitle: courses.title,
-      courseSlug: courses.slug,
-      instructorId: courses.instructorId,
-    })
-    .from(lessons)
-    .innerJoin(modules, eq(lessons.moduleId, modules.id))
-    .innerJoin(courses, eq(modules.courseId, courses.id))
-    .where(eq(lessons.id, lessonId))
-    .get();
-}
 
 export function getCommentById(db: Db, commentId: number) {
   return db.select().from(comments).where(eq(comments.id, commentId)).get();
@@ -85,26 +70,26 @@ function toThreadComment(row: ThreadRow, instructorId: number): ThreadComment {
   };
 }
 
-function getLessonThread(db: Db, lessonId: number): ThreadComment[] {
-  const course = getCourseForLesson(db, lessonId);
-  if (!course) return [];
+type ThreadRef = { lessonId: number; instructorId: number };
 
+function getLessonThread(
+  db: Db,
+  { lessonId, instructorId }: ThreadRef
+): ThreadComment[] {
   const rows = getThreadRows(db, lessonId);
   const topLevel: ThreadComment[] = [];
   const byId = new Map<number, ThreadComment>();
 
   for (const row of rows) {
     if (row.parentId !== null) continue;
-    const comment = toThreadComment(row, course.instructorId);
+    const comment = toThreadComment(row, instructorId);
     byId.set(comment.id, comment);
     topLevel.push(comment);
   }
 
   for (const row of rows) {
     if (row.parentId === null || row.deletedAt !== null) continue;
-    byId
-      .get(row.parentId)
-      ?.replies.push(toThreadComment(row, course.instructorId));
+    byId.get(row.parentId)?.replies.push(toThreadComment(row, instructorId));
   }
 
   // A deleted question with no replies left has nothing worth showing.
@@ -128,6 +113,6 @@ async function renderThread(
   );
 }
 
-export function getRenderedLessonThread(db: Db, lessonId: number) {
-  return renderThread(getLessonThread(db, lessonId));
+export function getRenderedLessonThread(db: Db, thread: ThreadRef) {
+  return renderThread(getLessonThread(db, thread));
 }
