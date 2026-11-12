@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import * as schema from "~/db/schema";
 import { LessonProgressStatus, QuestionType } from "~/db/schema";
-import { saveNote } from "~/lib/notes.server";
 import type { LessonPageRequest } from "../index.server";
 import { setUpCourse } from "./fixtures";
 
@@ -10,6 +9,8 @@ let db: ReturnType<typeof setUpCourse>["db"];
 let base: ReturnType<typeof setUpCourse>["base"];
 let lessonPage: ReturnType<typeof setUpCourse>["lessonPage"];
 let lessonIds: number[];
+
+const NOW = new Date("2026-03-01T12:00:00.000Z");
 
 function request(overrides: Partial<LessonPageRequest>) {
   return course.request(overrides);
@@ -96,12 +97,25 @@ describe("loading the lesson page", () => {
   });
 
   it("includes the Student's own Note", async () => {
-    saveNote(db, base.user.id, lessonIds[1], "Remember this", new Date());
+    lessonPage.saveNote(
+      { userId: base.user.id, lessonId: lessonIds[1], body: "Remember this" },
+      NOW
+    );
     const page = await lessonPage.load(request({}));
     if (page?.view !== "full") throw new Error("expected the full page");
     expect(page.note?.body).toBe("Remember this");
     expect(page.bookmarked).toBe(false);
     expect(page.instructorName).toBe("Test Instructor");
+  });
+
+  it("includes whether the Student bookmarked the lesson", async () => {
+    lessonPage.toggleBookmark(
+      { userId: base.user.id, lessonId: lessonIds[1] },
+      NOW
+    );
+    const page = await lessonPage.load(request({}));
+    if (page?.view !== "full") throw new Error("expected the full page");
+    expect(page.bookmarked).toBe(true);
   });
 });
 
@@ -203,14 +217,18 @@ describe("quizzes", () => {
 describe("marking a lesson complete", () => {
   it("completes a lesson already in progress", async () => {
     await lessonPage.load(request({}));
-    lessonPage.markComplete(base.user.id, lessonIds[1]);
+    lessonPage.markComplete(base.user.id, lessonIds[1], NOW);
     expect(progressRows()).toMatchObject([
-      { lessonId: lessonIds[1], status: LessonProgressStatus.Completed },
+      {
+        lessonId: lessonIds[1],
+        status: LessonProgressStatus.Completed,
+        completedAt: NOW.toISOString(),
+      },
     ]);
   });
 
   it("stays complete when the lesson is viewed again", async () => {
-    lessonPage.markComplete(base.user.id, lessonIds[1]);
+    lessonPage.markComplete(base.user.id, lessonIds[1], NOW);
     const page = await lessonPage.load(request({}));
     if (page?.view !== "full") throw new Error("expected the full page");
     expect(page.lessonStatus).toBe(LessonProgressStatus.Completed);

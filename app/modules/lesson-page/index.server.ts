@@ -36,8 +36,8 @@ export function createLessonPage(database: Db) {
       return getQuizById(database, quizId);
     },
 
-    markComplete(userId: number, lessonId: number) {
-      return markLessonComplete(database, userId, lessonId);
+    markComplete(userId: number, lessonId: number, now: Date) {
+      return markLessonComplete(database, { userId, lessonId }, now);
     },
 
     /** Scores a submitted quiz form and records the attempt; null on failure. */
