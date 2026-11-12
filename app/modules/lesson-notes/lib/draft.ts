@@ -13,9 +13,13 @@ export type NoteDraftStatus = {
   canSave: boolean;
 };
 
+/**
+ * What the Lesson page's Note editor shows for the text the Student has typed:
+ * the character count against the limit, and whether Save should be enabled.
+ */
 // Counts the trimmed draft because the server trims before it checks the
 // limit; counting the raw text would warn about whitespace that never saves.
-export function noteDraftStatus(
+export function describeNoteDraft(
   draft: string,
   savedBody: string
 ): NoteDraftStatus {

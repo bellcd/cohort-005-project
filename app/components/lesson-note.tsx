@@ -27,14 +27,18 @@ export function LessonNote({
   const [draft, setDraft] = useState(savedBody);
   const status = describeNoteDraft(draft, savedBody);
   const isSaving = fetcher.state !== "idle";
-  const error = fetcher.data?.error;
-  const justSaved = fetcher.data?.ok && !status.dirty && !isSaving;
+  // The last save's outcome describes the text that was submitted, so it is
+  // shown until the Student edits again, not for whatever they type next.
+  const [showOutcome, setShowOutcome] = useState(false);
+  const outcome = showOutcome && !isSaving ? fetcher.data : undefined;
+  const error = outcome?.error;
+  const justSaved = outcome?.ok === true && !status.dirty;
 
   return (
     <Card className="mb-8 gap-0 py-0">
       <LessonNoteHeader />
 
-      <fetcher.Form method="post">
+      <fetcher.Form method="post" onSubmit={() => setShowOutcome(true)}>
         <input type="hidden" name="intent" value="save-note" />
         <CardContent className="py-4">
           <label htmlFor="lesson-note-body" className="sr-only">
@@ -44,7 +48,10 @@ export function LessonNote({
             id="lesson-note-body"
             name="body"
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              setShowOutcome(false);
+            }}
             placeholder="What stood out in this lesson?"
             aria-invalid={status.overLimit || !!error}
             aria-describedby="lesson-note-status"
@@ -55,7 +62,7 @@ export function LessonNote({
         <CardFooter className="justify-between gap-4 rounded-b-xl border-t bg-muted/40 py-3 [.border-t]:pt-3">
           <LessonNoteStatus
             error={error}
-            justSaved={!!justSaved}
+            justSaved={justSaved}
             dirty={status.dirty}
             updatedAt={note?.updatedAt}
           />
